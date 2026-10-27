@@ -1,0 +1,5 @@
+OpenDyslexic by Abbie Gonzalez.
+Font files accessed at runtime from the archived author repository via jsDelivr.
+SIL Open Font License 1.1: https://github.com/antijingoist/opendyslexic/blob/main/OFL.txt
+The font is used optionally in NovelWeaver and does not alter manuscript contents.
+For reliable offline fonts in an installed PWA, open the updated site while online at least once and choose OpenDyslexic before switching offline.

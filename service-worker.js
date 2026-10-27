@@ -1,5 +1,5 @@
 // NovelWeaver offline-first cache; all app resources are embedded in index.html.
-const CACHE_NAME = 'novelweaver-singlefile-v1.5.1';
+const CACHE_NAME = 'novelweaver-singlefile-v1.6.0';
 const CORE = [
   './',
   './index.html',
@@ -8,9 +8,22 @@ const CORE = [
   './icon-512.png'
 ];
 
+
+const OPTIONAL_FONTS = [
+  'https://cdn.jsdelivr.net/gh/antijingoist/opendyslexic@main/compiled/OpenDyslexic-Regular.woff2',
+  'https://cdn.jsdelivr.net/gh/antijingoist/opendyslexic@main/compiled/OpenDyslexic-Bold.woff2'
+];
+async function cacheOptionalFonts(cache) {
+  await Promise.allSettled(OPTIONAL_FONTS.map(async url => {
+    const request = new Request(url, { mode: 'cors' });
+    const response = await fetch(request);
+    if (response.ok) await cache.put(request, response);
+  }));
+}
+
 self.addEventListener('install', event => {
   event.waitUntil(
-    caches.open(CACHE_NAME).then(cache => cache.addAll(CORE))
+    caches.open(CACHE_NAME).then(async cache => { await cache.addAll(CORE); await cacheOptionalFonts(cache); })
       .then(() => self.skipWaiting())
   );
 });
@@ -26,7 +39,9 @@ self.addEventListener('activate', event => {
 
 self.addEventListener('fetch', event => {
   const req = event.request;
-  if (req.method !== 'GET' || new URL(req.url).origin !== self.location.origin) return;
+  if (req.method !== 'GET') return;
+  const fontRequest = OPTIONAL_FONTS.includes(req.url);
+  if (!fontRequest && new URL(req.url).origin !== self.location.origin) return;
   event.respondWith(
     caches.match(req).then(cached => cached || fetch(req).then(response => {
       if (response.ok) {
