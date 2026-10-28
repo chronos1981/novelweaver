@@ -5,7 +5,7 @@
  */
 window.NOVELWEAVER_PUBLIC_CONFIG = {
   // Copy your actual OAuth WEB CLIENT ID here:
-  googleOAuthClientId: "",
+  googleOAuthClientId: "801830657069-g1kvjuft7ddacp3bmns5g0u32rufa3og.apps.googleusercontent.com",
 
   // Optional, only for Google Picker; restrict API key by HTTP referrer + API:
   googlePickerApiKey: "",
