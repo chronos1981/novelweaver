@@ -1,8 +1,9 @@
 // NovelWeaver offline-first cache; all app resources are embedded in index.html.
-const CACHE_NAME = 'novelweaver-singlefile-v1.8.0-drive-auto';
+const CACHE_NAME = 'novelweaver-singlefile-v1.8.1-persist-config';
 const CORE = [
   './',
   './index.html',
+  './novelweaver-config.js',
   './manifest.webmanifest',
   './icon-192.png',
   './icon-512.png'
@@ -42,6 +43,20 @@ self.addEventListener('fetch', event => {
   if (req.method !== 'GET') return;
   const fontRequest = OPTIONAL_FONTS.includes(req.url);
   if (!fontRequest && new URL(req.url).origin !== self.location.origin) return;
+  // Always check for changes to the public configuration while online;
+  // fall back to its cached copy when editing without a connection.
+  if (req.url === new URL('./novelweaver-config.js', self.registration.scope).href) {
+    event.respondWith(
+      fetch(new Request(req, { cache: 'no-cache' })).then(response => {
+        if (response.ok) {
+          const copy = response.clone();
+          caches.open(CACHE_NAME).then(cache => cache.put(req, copy));
+        }
+        return response;
+      }).catch(() => caches.match(req))
+    );
+    return;
+  }
   event.respondWith(
     caches.match(req).then(cached => cached || fetch(req).then(response => {
       if (response.ok) {
