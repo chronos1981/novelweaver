@@ -22,7 +22,7 @@ Keys stay in memory by default. The optional checkbox keeps a key in sessionStor
 
 ## Hosting and connectivity
 
-GitHub Pages cannot proxy API requests. Your browser must reach your Open WebUI server, and the server or your own gateway must permit your NovelWeaver origin through CORS. Allow Authorization and Content-Type headers and GET/POST methods. Remote servers need HTTPS when NovelWeaver is opened over HTTPS. A localhost address means the device running the browser, not another computer on your network. Local-network access may also require browser permission.
+GitHub Pages cannot proxy API requests. Your browser must reach your Open WebUI server, and the server or your own gateway must permit your NovelWeaver origin through CORS. Allow Authorization and Content-Type headers and GET/POST methods. Public servers need HTTPS when NovelWeaver is opened over HTTPS. Recognizable local HTTP IPs (10.x, 172.16–31.x, 192.168.x, link-local and private IPv6), localhost, and .local names are accepted. Quill marks requests with their local/loopback address space and checks browser network permission. Only an explicit Test, Send, or Rewrite click initiates a connection. When prompted, allow local-network access. If previously denied, allow local or loopback access in browser Site settings for NovelWeaver. Browser support varies; if local HTTP is blocked, use HTTPS for Open WebUI or serve NovelWeaver from your own server. Local addresses still require ordinary CORS. No browser protections are disabled. A localhost address means the device running the browser, not another computer on your network. Local-network access may also require browser permission.
 
 The client calls `GET /api/models` and `POST /api/chat/completions` with a Bearer API key. Chat requests use `{model, messages, stream: false}` and read `choices[0].message.content`. They omit cookies, reject redirects, bypass caches, support Stop, and time out after 90 seconds. Stopping may not stop the server from processing a request.
 
@@ -31,3 +31,5 @@ Quill includes chosen manuscript text directly in messages. It does not automati
 ## Verification
 
 Run `node tests/quill.test.cjs` for API URL normalization, model discovery, chat payloads and reply parsing, follow-up history, context boundaries and limits, stale selections, error handling, guarded rewrite application, and exclusion of connection details from project data. Browser QA uses a preview-only mock; users still need to test their own live server connection.
+
+Local-network behavior follows [Chrome’s local-network access guidance](https://developer.chrome.com/docs/modern-web-guidance/guides/security/local-network-access). Quill requests only the exact user-configured address; it does not scan or discover other local devices.

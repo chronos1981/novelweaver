@@ -7,8 +7,8 @@ let calls=[];
 const context=vm.createContext({URL,AbortController,Response,setTimeout,clearTimeout,console,document:{addEventListener(){},createElement:element},location:{protocol:'https:',origin:'https://example.test'},localStorage:{getItem(){return null}},sessionStorage:{getItem(){return null}},S:{project},$,h:s=>String(s).replace(/</g,'&lt;'),flushAllEdits(){},locate,activeBook:()=>project.Books[0],activeChapter:()=>project.Chapters[0],bookById:id=>project.Books.find(b=>b.Id===id),editParagraph:(pid,text)=>{calls.push([pid,text]);locate(pid).paragraph.Text=text},render(){},id:()=>Math.random().toString(36)});
 const html=fs.readFileSync(require('node:path').join(__dirname,'../index.html'),'utf8');
 const source=html.slice(html.indexOf('// Optional Open WebUI client.'),html.indexOf('// UI event delegation preserves'));
-vm.runInContext(source+'\nglobalThis.api={quill,quillNormalizeUrl,quillContext,quillRequest,quillRenderProposal,quillChatPayload,quillSend,quillTest};',context);
-const {quill,quillNormalizeUrl,quillContext,quillRequest,quillRenderProposal,quillChatPayload,quillSend,quillTest}=context.api;
+vm.runInContext(source+'\nglobalThis.api={quill,quillNormalizeUrl,quillContext,quillRequest,quillRenderProposal,quillChatPayload,quillSend,quillTest,quillAddressSpace,quillNetworkOptions};',context);
+const {quill,quillNormalizeUrl,quillContext,quillRequest,quillRenderProposal,quillChatPayload,quillSend,quillTest,quillAddressSpace,quillNetworkOptions}=context.api;
 (async()=>{
  for(const url of ['https://host','https://host/api','https://host/api/v1/'])assert.equal(quillNormalizeUrl(url),'https://host/api');
  assert.equal(quillNormalizeUrl('https://host/prefix/api'),'https://host/prefix/api');
@@ -41,5 +41,15 @@ const {quill,quillNormalizeUrl,quillContext,quillRequest,quillRenderProposal,qui
  $('#quill-prompt').value='Follow-up question';await context.api.quillSend(false);assert.equal(outgoing[1].body.messages.length,3);assert.equal(outgoing[1].body.messages[1].content,'Open WebUI reply');assert.match(outgoing[1].body.messages[0].content,/First question/);
  const count=outgoing.length;quill.scope='selection';quill.selection=null;$('#quill-prompt').value='Do not send';await context.api.quillSend(true);assert.equal(outgoing.length,count);
  context.fetch=async(url,options)=>{fetched={url,options};return Response.json({data:[{id:'llama3.2:latest',name:'Llama'}]})};$('#quill-url').value='https://host';$('#quill-key').value='fake';await context.api.quillTest();assert.equal(fetched.url,'https://host/api/models');assert.match($('#quill-status').textContent,/1 model/);
- console.log('PASS: URL security, context boundaries/limits, stale selections, request options/errors, guarded rewrite application, and project isolation.');
+
+ for(const [url,space] of [['http://192.168.1.50:3000','local'],['http://10.0.0.2:8080','local'],['http://172.16.0.1','local'],['http://172.31.255.254','local'],['http://169.254.1.1','local'],['http://server.local','local'],['http://[fd00::1]:3000','local'],['http://[fe80::1]:3000','local'],['http://127.0.0.2','loopback'],['http://localhost','loopback'],['http://[::1]','loopback'],['https://172.15.0.1',null],['https://172.32.0.1',null],['https://192.169.1.1',null],['https://8.8.8.8',null],['https://server.local.example',null]]){assert.equal(context.api.quillAddressSpace(url),space,url);if(space)assert.ok(quillNormalizeUrl(url).endsWith('/api'));}
+ for(const url of ['http://8.8.8.8','http://172.32.0.1','http://192.169.1.1','http://example.test'])assert.throws(()=>quillNormalizeUrl(url),/Use HTTPS/);
+ const requestedPermissions=[];let fetches=0;context.navigator={permissions:{query:async({name})=>{requestedPermissions.push(name);return {state:'granted'}}}};context.fetch=async(url,options)=>{fetches++;fetched={url,options};return Response.json({data:[]})};
+ await quillRequest('http://192.168.1.50:3000/api','fake','/models',null,new AbortController());assert.equal(fetched.options.targetAddressSpace,'local');assert.equal(fetched.options.mode,'cors');assert.equal(fetched.url,'http://192.168.1.50:3000/api/models');assert.equal(requestedPermissions.at(-1),'local-network');
+ await quillRequest('http://localhost:3000/api','fake','/models',null,new AbortController());assert.equal(fetched.options.targetAddressSpace,'loopback');assert.equal(requestedPermissions.at(-1),'loopback-network');
+ context.navigator.permissions.query=async()=>({state:'denied'});const priorFetches=fetches;await assert.rejects(quillRequest('http://192.168.1.50:3000/api','fake','/models',null,new AbortController()),/Site settings/);assert.equal(fetches,priorFetches);
+ context.navigator.permissions.query=async()=>{throw new TypeError('Unsupported permission')};await quillRequest('http://192.168.1.50:3000/api','fake','/models',null,new AbortController());assert.equal(fetched.options.targetAddressSpace,'local');
+ await quillRequest('https://host/api','fake','/models',null,new AbortController());assert.equal(fetched.options.targetAddressSpace,undefined);
+ assert.equal(requestedPermissions.includes('local-network-access'),false);
+ console.log('PASS: local-address validation, browser permissions and fallback, request address-space options, URL security, context boundaries/limits, stale selections, request options/errors, guarded rewrite application, and project isolation.');
 })().catch(e=>{console.error(e);process.exitCode=1});
