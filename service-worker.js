@@ -1,5 +1,5 @@
 // NovelWeaver offline-first cache; all app resources are embedded in index.html.
-const CACHE_NAME = 'novelweaver-singlefile-v1.8.4-library-book-controls';
+const CACHE_NAME = 'novelweaver-singlefile-v1.9.0-quill-anythingllm';
 const CORE = [
   './',
   './index.html',
@@ -40,7 +40,7 @@ self.addEventListener('activate', event => {
 
 self.addEventListener('fetch', event => {
   const req = event.request;
-  if (req.method !== 'GET') return;
+  if (req.method !== 'GET' || req.cache === 'no-store' || req.headers.has('Authorization')) return;
   const fontRequest = OPTIONAL_FONTS.includes(req.url);
   if (!fontRequest && new URL(req.url).origin !== self.location.origin) return;
   // Always check for changes to the public configuration while online;
