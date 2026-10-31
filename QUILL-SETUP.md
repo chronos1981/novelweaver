@@ -1,5 +1,7 @@
 # Quill · Open WebUI
 
+For the complete built-in guide, open **Help** in desktop navigation or **More → Help & local AI setup**. It includes editor usage, Docker installation, API permissions, CORS, Caddy, certificate transfer, SSH tunnels, and connection troubleshooting.
+
 Open the quill in the lower-right corner, or **More → Quill → Connection settings**.
 
 1. In your Open WebUI account settings, create an API key. Your administrator may need to enable API keys and permit your account to use them. If API endpoint restrictions are enabled, allow `/api/models` and `/api/chat/completions`.

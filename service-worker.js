@@ -1,5 +1,5 @@
 // NovelWeaver offline-first cache; all app resources are embedded in index.html.
-const CACHE_NAME = 'novelweaver-singlefile-v1.9.3-quill-no-timeout';
+const CACHE_NAME = 'novelweaver-singlefile-v1.10.0-built-in-help';
 const CORE = [
   './',
   './index.html',
