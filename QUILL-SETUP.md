@@ -10,7 +10,7 @@ Open the quill in the lower-right corner, or **More → Quill → Connection set
 
 Quill now connects to Open WebUI. Earlier AnythingLLM settings and credentials are not reused. Each browser profile has its own settings. NovelWeaver has no user accounts, so people sharing a browser session also share its connection.
 
-Keys stay in memory by default. The optional checkbox keeps a key in sessionStorage for the tab session. Connection details are excluded from manuscript exports and Drive sync. **Forget connection** clears the current connection and in-memory chat; it does not delete server or provider logs.
+Leave **Remember API key on this device** checked and choose **Save connection** to keep the key in this browser profile across restarts. Uncheck it and save to keep the key only in memory until reload. Anyone using this browser profile can use the saved key. Private browsing or clearing site data can erase it. Connection details and keys are excluded from manuscript exports and Drive sync. **Forget connection** removes the saved key, current connection, and in-memory chat; it does not delete server or provider logs.
 
 ## Writing help
 
