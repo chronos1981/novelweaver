@@ -1,5 +1,5 @@
 // NovelWeaver offline-first cache; all app resources are embedded in index.html.
-const CACHE_NAME = 'novelweaver-singlefile-v1.11.0-paragraph-edit-counts';
+const CACHE_NAME = 'novelweaver-singlefile-v1.11.1-fresh-navigation';
 const CORE = [
   './',
   './index.html',
@@ -24,7 +24,7 @@ async function cacheOptionalFonts(cache) {
 
 self.addEventListener('install', event => {
   event.waitUntil(
-    caches.open(CACHE_NAME).then(async cache => { await cache.addAll(CORE); await cacheOptionalFonts(cache); })
+    caches.open(CACHE_NAME).then(async cache => { await cache.addAll(CORE.map(url => new Request(url, { cache: 'reload' }))); await cacheOptionalFonts(cache); })
       .then(() => self.skipWaiting())
   );
 });
@@ -43,6 +43,23 @@ self.addEventListener('fetch', event => {
   if (req.method !== 'GET' || req.cache === 'no-store' || req.headers.has('Authorization')) return;
   const fontRequest = OPTIONAL_FONTS.includes(req.url);
   if (!fontRequest && new URL(req.url).origin !== self.location.origin) return;
+  // A normal refresh must load the current app, with cached HTML only as an
+  // offline fallback. Cache-first navigation can leave an open tab on old UI.
+  if (req.mode === 'navigate') {
+    event.respondWith((async () => {
+      const cache = await caches.open(CACHE_NAME);
+      try {
+        const response = await fetch(new Request(req, { cache: 'no-cache' }));
+        if (!response.ok) throw new Error('Navigation unavailable');
+        // Cache writes must not prevent a successful online page from loading.
+        try { await cache.put(req, response.clone()); } catch {}
+        return response;
+      } catch {
+        return await cache.match(req) || await cache.match('./index.html') || Response.error();
+      }
+    })());
+    return;
+  }
   // Always check for changes to the public configuration while online;
   // fall back to its cached copy when editing without a connection.
   if (req.url === new URL('./novelweaver-config.js', self.registration.scope).href) {
