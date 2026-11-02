@@ -1,5 +1,5 @@
 // NovelWeaver offline-first cache; all app resources are embedded in index.html.
-const CACHE_NAME = 'novelweaver-singlefile-v1.10.3-collapsible-library';
+const CACHE_NAME = 'novelweaver-singlefile-v1.11.0-paragraph-edit-counts';
 const CORE = [
   './',
   './index.html',
