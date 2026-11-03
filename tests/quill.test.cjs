@@ -10,6 +10,18 @@ const source=html.slice(html.indexOf('// Optional Open WebUI client.'),html.inde
 vm.runInContext(source+'\nglobalThis.api={quill,quillNormalizeUrl,quillContext,quillRequest,quillRenderProposal,quillChatPayload,quillSend,quillTest,quillAddressSpace,quillNetworkOptions};',context);
 const {quill,quillNormalizeUrl,quillContext,quillRequest,quillRenderProposal,quillChatPayload,quillSend,quillTest,quillAddressSpace,quillNetworkOptions}=context.api;
 (async()=>{
+ for(const [input,expected] of [
+  ['Normal answer','Normal answer'],
+  ['<think>Hidden\nreasoning</think>\nFinal answer','Final answer'],
+  ['<THINK>Hidden</THINK>Answer','Answer'],
+  ['<think>One</think>Answer<think>Two</think>','Answer'],
+  ['<think>Outer<think>Inner</think>Outer</think>Final','Final'],
+  ['<think>Unfinished private reasoning',''],
+  ['<think>Only thinking</think>',''],
+  ['', ''],[null,''],
+  ['Answer with <b>literal markup</b>','Answer with <b>literal markup</b>']
+ ])assert.equal(context.quillFinalAnswer(input),expected);
+
  for(const url of ['https://host','https://host/api','https://host/api/v1/'])assert.equal(quillNormalizeUrl(url),'https://host/api');
  assert.equal(quillNormalizeUrl('https://host/prefix/api'),'https://host/prefix/api');
  for(const url of ['http://lan:3001','https://user:pass@host','https://host?key=abc','file:///tmp/test'])assert.throws(()=>quillNormalizeUrl(url));
@@ -36,7 +48,7 @@ const {quill,quillNormalizeUrl,quillContext,quillRequest,quillRenderProposal,qui
  const payload=context.api.quillChatPayload('Second',[{role:'user',content:'First'},{role:'assistant',content:'Reply'}]);assert.equal(payload.model,'test-model');assert.equal(payload.stream,false);assert.equal(payload.messages.length,3);assert.throws(()=>context.api.quillChatPayload('x'.repeat(160001)),/160,000/);
  vm.runInContext('quillRender=()=>{};',context);
  let outgoing=[];
- context.fetch=async(url,options)=>{outgoing.push({url,body:JSON.parse(options.body)});return Response.json({choices:[{message:{content:'Open WebUI reply'}}]})};
+ context.fetch=async(url,options)=>{outgoing.push({url,body:JSON.parse(options.body)});return Response.json({choices:[{message:{content:'<think>Private model reasoning that must stay hidden.</think>Open WebUI reply'}}]})};
  $('#quill-prompt').value='First question';await context.api.quillSend(false);assert.equal(outgoing[0].url,'https://host/api/chat/completions');assert.equal(outgoing[0].body.model,'test-model');assert.equal(outgoing[0].body.stream,false);assert.equal(quill.messages.at(-1).text,'Open WebUI reply');
  $('#quill-prompt').value='Follow-up question';await context.api.quillSend(false);assert.equal(outgoing[1].body.messages.length,3);assert.equal(outgoing[1].body.messages[1].content,'Open WebUI reply');assert.match(outgoing[1].body.messages[0].content,/First question/);
  const count=outgoing.length;quill.scope='selection';quill.selection=null;$('#quill-prompt').value='Do not send';await context.api.quillSend(true);assert.equal(outgoing.length,count);
